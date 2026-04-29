@@ -1,0 +1,7 @@
+interface:
+  display_name: "Blockchain Book Writing"
+  short_description: "Write Chinese blockchain book chapters"
+  default_prompt: "Use $blockchain-book-writing to draft a formal Chinese book chapter from my blockchain chapter title and outline."
+
+policy:
+  allow_implicit_invocation: true
