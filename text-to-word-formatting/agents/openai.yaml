@@ -1,0 +1,7 @@
+interface:
+  display_name: "Text to Word Formatting"
+  short_description: "Create formatted Word documents from text"
+  default_prompt: "Use $text-to-word-formatting to turn this text into a formatted Word document."
+
+policy:
+  allow_implicit_invocation: true
