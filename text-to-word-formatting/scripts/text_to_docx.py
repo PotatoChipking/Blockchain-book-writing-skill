@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a formatted .docx from plain text using only the standard library."""
+"""Create or append to a formatted .docx from plain text using only the standard library."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import argparse
 import html
 import json
 import re
+import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -38,15 +39,17 @@ DEFAULT_SPEC: dict[str, Any] = {
     "title": {
         "font_size_pt": 18,
         "bold": True,
+        "east_asia_font": "SimSun",
+        "latin_font": "SimSun",
         "alignment": "center",
         "space_before_pt": 0,
         "space_after_pt": 18,
     },
     "headings": {
-        "1": {"font_size_pt": 16, "bold": True, "space_before_pt": 12, "space_after_pt": 6},
-        "2": {"font_size_pt": 14, "bold": True, "space_before_pt": 10, "space_after_pt": 6},
-        "3": {"font_size_pt": 13, "bold": True, "space_before_pt": 8, "space_after_pt": 4},
-        "4": {"font_size_pt": 12, "bold": True, "space_before_pt": 6, "space_after_pt": 4},
+        "1": {"font_size_pt": 16, "bold": True, "east_asia_font": "SimSun", "latin_font": "SimSun", "space_before_pt": 12, "space_after_pt": 6},
+        "2": {"font_size_pt": 14, "bold": True, "east_asia_font": "SimSun", "latin_font": "SimSun", "space_before_pt": 10, "space_after_pt": 6},
+        "3": {"font_size_pt": 13, "bold": True, "east_asia_font": "SimSun", "latin_font": "SimSun", "space_before_pt": 8, "space_after_pt": 4},
+        "4": {"font_size_pt": 12, "bold": True, "east_asia_font": "SimSun", "latin_font": "SimSun", "space_before_pt": 6, "space_after_pt": 4},
     },
     "header": "",
     "footer": "",
@@ -90,12 +93,14 @@ def esc(text: str) -> str:
 def paragraph_style(name: str, fmt: dict[str, Any], fonts: dict[str, str]) -> str:
     size = pt_to_half_points(float(fmt.get("font_size_pt", 12)))
     bold = "<w:b/>" if fmt.get("bold") else ""
+    latin_font = fmt.get("latin_font", fonts["latin"])
+    east_asia_font = fmt.get("east_asia_font", fonts["east_asia"])
     return f"""
     <w:style w:type="paragraph" w:styleId="{name}">
       <w:name w:val="{name}"/>
       <w:qFormat/>
       <w:rPr>
-        <w:rFonts w:ascii="{esc(fonts['latin'])}" w:hAnsi="{esc(fonts['latin'])}" w:eastAsia="{esc(fonts['east_asia'])}"/>
+        <w:rFonts w:ascii="{esc(latin_font)}" w:hAnsi="{esc(latin_font)}" w:eastAsia="{esc(east_asia_font)}"/>
         {bold}
         <w:sz w:val="{size}"/>
         <w:szCs w:val="{size}"/>
@@ -130,9 +135,11 @@ def run_xml(text: str, fmt: dict[str, Any], spec: dict[str, Any]) -> str:
     bold = "<w:b/>" if fmt.get("bold") else ""
     preserve = ' xml:space="preserve"' if text.startswith(" ") or text.endswith(" ") else ""
     fonts = spec["fonts"]
+    latin_font = fmt.get("latin_font", fonts["latin"])
+    east_asia_font = fmt.get("east_asia_font", fonts["east_asia"])
     return f"""<w:r>
       <w:rPr>
-        <w:rFonts w:ascii="{esc(fonts['latin'])}" w:hAnsi="{esc(fonts['latin'])}" w:eastAsia="{esc(fonts['east_asia'])}"/>
+        <w:rFonts w:ascii="{esc(latin_font)}" w:hAnsi="{esc(latin_font)}" w:eastAsia="{esc(east_asia_font)}"/>
         {bold}
         <w:sz w:val="{size}"/>
         <w:szCs w:val="{size}"/>
@@ -143,7 +150,8 @@ def run_xml(text: str, fmt: dict[str, Any], spec: dict[str, Any]) -> str:
 
 def paragraph_xml(text: str, style: str, fmt: dict[str, Any], spec: dict[str, Any], bullet: bool = False) -> str:
     body = spec["body"]
-    align = fmt.get("alignment", body.get("alignment", "left"))
+    default_align = "left" if style.startswith("Heading") else body.get("alignment", "left")
+    align = fmt.get("alignment", default_align)
     before = pt_to_twips(float(fmt.get("space_before_pt", body.get("space_before_pt", 0))))
     after = pt_to_twips(float(fmt.get("space_after_pt", body.get("space_after_pt", 0))))
     line = line_spacing_to_twips(float(fmt.get("line_spacing", body.get("line_spacing", 1.0))))
@@ -185,22 +193,7 @@ def detect_line(line: str) -> tuple[str, int, str]:
 
 
 def build_document_xml(text: str, title: str | None, spec: dict[str, Any]) -> str:
-    parts: list[str] = []
-    if title:
-        parts.append(paragraph_xml(title, "DocTitle", spec["title"], spec))
-    for raw_line in text.splitlines():
-        if not raw_line.strip():
-            parts.append(empty_paragraph_xml())
-            continue
-        kind, level, content = detect_line(raw_line)
-        if kind == "heading":
-            fmt = spec["headings"].get(str(level), spec["headings"]["4"])
-            parts.append(paragraph_xml(content, f"Heading{level}", fmt, spec))
-        elif kind == "bullet":
-            parts.append(paragraph_xml(content, "ListParagraph", spec["body"], spec, bullet=True))
-        else:
-            parts.append(paragraph_xml(content, "BodyText", spec["body"], spec))
-
+    parts = build_body_paragraphs(text, title, spec)
     page = spec["page"]
     if page.get("size", "A4").upper() == "LETTER":
         width, height = 12240, 15840
@@ -226,6 +219,25 @@ def build_document_xml(text: str, title: str | None, spec: dict[str, Any]) -> st
     </w:sectPr>
   </w:body>
 </w:document>"""
+
+
+def build_body_paragraphs(text: str, title: str | None, spec: dict[str, Any]) -> list[str]:
+    parts: list[str] = []
+    if title:
+        parts.append(paragraph_xml(title, "DocTitle", spec["title"], spec))
+    for raw_line in text.splitlines():
+        if not raw_line.strip():
+            parts.append(empty_paragraph_xml())
+            continue
+        kind, level, content = detect_line(raw_line)
+        if kind == "heading":
+            fmt = spec["headings"].get(str(level), spec["headings"]["4"])
+            parts.append(paragraph_xml(content, f"Heading{level}", fmt, spec))
+        elif kind == "bullet":
+            parts.append(paragraph_xml(content, "ListParagraph", spec["body"], spec, bullet=True))
+        else:
+            parts.append(paragraph_xml(content, "BodyText", spec["body"], spec))
+    return parts
 
 
 def header_footer_xml(text: str, spec: dict[str, Any], footer: bool = False) -> str:
@@ -321,10 +333,43 @@ def create_docx(input_path: Path, output_path: Path, spec: dict[str, Any], title
             docx.writestr("word/footer1.xml", header_footer_xml(str(spec["footer"]), spec, footer=True))
 
 
+def append_docx(input_path: Path, existing_path: Path, output_path: Path, spec: dict[str, Any], title: str | None) -> None:
+    text = input_path.read_text(encoding="utf-8")
+    new_paragraphs = "\n".join(build_body_paragraphs(text, title, spec))
+    if title:
+        new_paragraphs = empty_paragraph_xml() + "\n" + new_paragraphs
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    write_path = output_path
+    same_output = existing_path.resolve() == output_path.resolve()
+    if same_output:
+        handle = tempfile.NamedTemporaryFile(delete=False, suffix=".docx", dir=output_path.parent)
+        handle.close()
+        write_path = Path(handle.name)
+
+    with zipfile.ZipFile(existing_path, "r") as source:
+        names = source.namelist()
+        if "word/document.xml" not in names:
+            raise ValueError(f"{existing_path} does not look like a Word .docx file")
+        document_xml = source.read("word/document.xml").decode("utf-8")
+        if "<w:sectPr" not in document_xml:
+            raise ValueError("Could not find document section properties; append is not supported for this file")
+        insertion_at = document_xml.rfind("<w:sectPr")
+        updated_document = document_xml[:insertion_at] + new_paragraphs + "\n" + document_xml[insertion_at:]
+
+        with zipfile.ZipFile(write_path, "w", compression=zipfile.ZIP_DEFLATED) as target:
+            for info in source.infolist():
+                data = updated_document.encode("utf-8") if info.filename == "word/document.xml" else source.read(info.filename)
+                target.writestr(info, data)
+    if same_output:
+        write_path.replace(output_path)
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Create a formatted .docx from plain text.")
+    parser = argparse.ArgumentParser(description="Create or append to a formatted .docx from plain text.")
     parser.add_argument("--input", required=True, type=Path, help="UTF-8 text input file")
     parser.add_argument("--output", required=True, type=Path, help="Output .docx path")
+    parser.add_argument("--append-to", type=Path, help="Existing .docx to append the input text to")
     parser.add_argument("--spec", type=Path, help="Optional JSON formatting spec")
     parser.add_argument("--title", help="Optional document title")
     args = parser.parse_args()
@@ -332,8 +377,12 @@ def main() -> None:
     spec = DEFAULT_SPEC
     if args.spec:
         spec = deep_merge(DEFAULT_SPEC, json.loads(args.spec.read_text(encoding="utf-8")))
-    create_docx(args.input, args.output, spec, args.title)
-    print(f"Wrote {args.output}")
+    if args.append_to:
+        append_docx(args.input, args.append_to, args.output, spec, args.title)
+        print(f"Appended {args.input} to {args.append_to} and wrote {args.output}")
+    else:
+        create_docx(args.input, args.output, spec, args.title)
+        print(f"Wrote {args.output}")
 
 
 if __name__ == "__main__":

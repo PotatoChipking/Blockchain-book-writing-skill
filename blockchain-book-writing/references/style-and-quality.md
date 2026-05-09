@@ -44,6 +44,7 @@ Avoid expressions such as:
 If the user specifies a target length, stay close to it. If not:
 
 - 小节说明：约 800-1500 字
+- 三级编号小节（如 9.5.1）：默认标题后最多三段正文，不再设置内部小标题；如果用户指定字数，应在三段结构内尽量严格满足指定字数
 - 普通章节：约 2000-4000 字
 - 重点章节：约 5000-10000 字
 - 目录摘要：约 200-500 字

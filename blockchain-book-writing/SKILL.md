@@ -46,6 +46,8 @@ Do not use this skill for short one-sentence explanations, social-media articles
 
 6. Write in formal book style.
    Each section should first explain the problem, then the mechanism, then the meaning. Do not merely list terms. Distinguish vision, design goals, implemented capabilities, and future possibilities.
+   For third-level numbered book sections such as `9.5.1`, `9.5.2`, or `2.3.4`, do not create extra internal numbered headings by default. Output the section heading followed by at most three body paragraphs, unless the user explicitly asks for a deeper outline. The three-paragraph rule is a structure rule, not a length limit.
+   When the user specifies a target length, satisfy that length as closely as possible within the requested structure. For example, a 2500-word third-level section should still use at most three substantial paragraphs rather than adding internal headings.
 
 7. Check facts and uncertainty.
    If the chapter involves post-2024 projects, current project status, launch dates, partners, financing, transaction volumes, TPS, latency, finality, protocol versions, roadmap, regulatory progress, ecosystem data, latest cases, or current leaders, verify facts before stating them as current. Prefer official docs, official blogs, white papers, technical docs, GitHub repositories, regulatory or standards documents, authoritative media, and research reports.
@@ -58,7 +60,21 @@ Do not use this skill for short one-sentence explanations, social-media articles
 
 ## Default Output
 
-If the user only asks to write from a chapter title and does not specify format, output a ready-to-use book section with this structure:
+If the user asks for a third-level numbered section such as `9.5.1` and does not specify another structure, output a ready-to-use book subsection with this structure:
+
+```md
+9.5.1 章节标题
+
+第一段：背景、项目定位、为什么本节对象值得讨论。
+
+第二段：核心机制、架构、工程路线、应用场景。
+
+第三段：优势、局限、挑战、对本书主题或上下文的启示。
+```
+
+Keep this subsection to at most three paragraphs after the heading. Do not add internal headings such as `1. 背景与问题`, `2. 核心机制`, or `3. 应用价值` inside a third-level section unless the user explicitly requests them. If the user specifies a target length, expand or compress the paragraph depth to meet that requested length.
+
+If the user asks for a larger chapter or does not provide a third-level section number, output a ready-to-use book section with this structure:
 
 ```md
 ## 章节标题

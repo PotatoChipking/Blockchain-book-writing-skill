@@ -137,6 +137,8 @@ cp -R text-to-word-formatting ~/.codex/skills/
 
 这是一个用于将文本写入 Word 并按指定格式排版的 Codex skill。它适合把章节草稿、书稿正文、类 Markdown 文本或整理后的内容生成 `.docx` 文件。
 
+默认排版规则已根据上级目录中的 `区块链技术-作者著书须知.doc` 总结并写入 skill，详见 `text-to-word-formatting/references/publisher-default-format.md`。
+
 ### 适用场景
 
 - 将纯文本或类 Markdown 文稿转换为 Word `.docx`
@@ -164,6 +166,15 @@ python3 text-to-word-formatting/scripts/text_to_docx.py \
   --input draft.txt \
   --output draft.docx \
   --spec format.json
+```
+
+将后续小节追加到已有 Word 文件：
+
+```bash
+python3 text-to-word-formatting/scripts/text_to_docx.py \
+  --input section-9-5-2.txt \
+  --append-to 9.5.docx \
+  --output 9.5.docx
 ```
 
 格式配置字段见：
@@ -194,7 +205,8 @@ text-to-word-formatting/references/format-spec.md
 
 1. 使用 `blockchain-book-writing` 生成或润色章节正文。
 2. 将生成后的正文保存为临时文本文件，例如 `chapter-9-5-1.txt`。
-3. 使用 `text-to-word-formatting` 按指定格式生成 `.docx`。
+3. 第一个小节使用 `text-to-word-formatting` 生成 `.docx`。
+4. 后续小节继续生成临时文本文件，并用 `--append-to` 追加到同一个 `.docx` 末尾。
 
 推荐在调用时明确说明两个阶段的目标，例如：
 
@@ -211,6 +223,14 @@ Word 排版要求：
 - 一级标题：黑体，三号，居中
 - 二级标题：黑体，四号，左对齐
 - 页脚：第 PAGE 页
+```
+
+后续继续写同一章时，可以这样调用：
+
+```text
+请使用 $blockchain-book-writing 编写 9.5.2 的正文，
+然后使用 $text-to-word-formatting 追加到已有 9.5.docx 末尾。
+使用默认排版格式。
 ```
 
 如果这个组合流程会被频繁使用，可以继续新增一个编排型 skill，例如 `book-chapter-to-word`，专门负责协调“章节生成 → 文本落盘 → Word 排版 → 输出检查”。当前仓库暂时保持两个基础 skill 分离，便于单独维护和复用。
