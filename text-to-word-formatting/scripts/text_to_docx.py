@@ -29,7 +29,7 @@ DEFAULT_SPEC: dict[str, Any] = {
     },
     "fonts": {"east_asia": "SimSun", "latin": "Times New Roman"},
     "body": {
-        "font_size_pt": 12,
+        "font_size_pt": 10.5,
         "line_spacing": 1.5,
         "first_line_indent_chars": 2,
         "alignment": "both",
@@ -47,8 +47,8 @@ DEFAULT_SPEC: dict[str, Any] = {
     },
     "headings": {
         "1": {"font_size_pt": 16, "bold": True, "east_asia_font": "SimSun", "latin_font": "SimSun", "space_before_pt": 12, "space_after_pt": 6},
-        "2": {"font_size_pt": 14, "bold": True, "east_asia_font": "SimSun", "latin_font": "SimSun", "space_before_pt": 10, "space_after_pt": 6},
-        "3": {"font_size_pt": 13, "bold": True, "east_asia_font": "SimSun", "latin_font": "SimSun", "space_before_pt": 8, "space_after_pt": 4},
+        "2": {"font_size_pt": 14, "bold": False, "east_asia_font": "KaiTi_GB2312", "latin_font": "KaiTi_GB2312", "space_before_pt": 10, "space_after_pt": 6},
+        "3": {"font_size_pt": 12, "bold": True, "east_asia_font": "SimHei", "latin_font": "SimHei", "space_before_pt": 8, "space_after_pt": 4},
         "4": {"font_size_pt": 12, "bold": True, "east_asia_font": "SimSun", "latin_font": "SimSun", "space_before_pt": 6, "space_after_pt": 4},
     },
     "header": "",
@@ -114,6 +114,7 @@ def styles_xml(spec: dict[str, Any]) -> str:
         paragraph_style("BodyText", spec["body"], fonts),
         paragraph_style("DocTitle", spec["title"], fonts),
         paragraph_style("ListParagraph", spec["body"], fonts),
+        paragraph_style("FootnoteText", {**spec["body"], "font_size_pt": 9, "space_after_pt": 0}, fonts),
     ]
     for level in range(1, 5):
         styles.append(paragraph_style(f"Heading{level}", spec["headings"].get(str(level), {}), fonts))
@@ -148,7 +149,41 @@ def run_xml(text: str, fmt: dict[str, Any], spec: dict[str, Any]) -> str:
     </w:r>"""
 
 
-def paragraph_xml(text: str, style: str, fmt: dict[str, Any], spec: dict[str, Any], bullet: bool = False) -> str:
+def footnote_reference_run(note_id: int) -> str:
+    return f"""<w:r>
+      <w:rPr>
+        <w:rStyle w:val="FootnoteReference"/>
+        <w:vertAlign w:val="superscript"/>
+      </w:rPr>
+      <w:footnoteReference w:id="{note_id}"/>
+    </w:r>"""
+
+
+def runs_with_footnotes(text: str, fmt: dict[str, Any], spec: dict[str, Any], footnotes: list[str] | None) -> str:
+    if footnotes is None:
+        return run_xml(text, fmt, spec)
+    runs: list[str] = []
+    pattern = re.compile(r"（批注：(.+?)）")
+    pos = 0
+    for match in pattern.finditer(text):
+        if match.start() > pos:
+            runs.append(run_xml(text[pos:match.start()], fmt, spec))
+        footnotes.append(match.group(1).strip())
+        runs.append(footnote_reference_run(len(footnotes)))
+        pos = match.end()
+    if pos < len(text):
+        runs.append(run_xml(text[pos:], fmt, spec))
+    return "".join(runs)
+
+
+def paragraph_xml(
+    text: str,
+    style: str,
+    fmt: dict[str, Any],
+    spec: dict[str, Any],
+    bullet: bool = False,
+    footnotes: list[str] | None = None,
+) -> str:
     body = spec["body"]
     default_align = "left" if style.startswith("Heading") else body.get("alignment", "left")
     align = fmt.get("alignment", default_align)
@@ -170,7 +205,7 @@ def paragraph_xml(text: str, style: str, fmt: dict[str, Any], spec: dict[str, An
         <w:spacing w:before="{before}" w:after="{after}" w:line="{line}" w:lineRule="auto"/>
         {indent}
       </w:pPr>
-      {run_xml(text, fmt, spec)}
+      {runs_with_footnotes(text, fmt, spec, footnotes)}
     </w:p>"""
 
 
@@ -192,8 +227,8 @@ def detect_line(line: str) -> tuple[str, int, str]:
     return "body", 0, stripped
 
 
-def build_document_xml(text: str, title: str | None, spec: dict[str, Any]) -> str:
-    parts = build_body_paragraphs(text, title, spec)
+def build_document_xml(text: str, title: str | None, spec: dict[str, Any], footnotes: list[str] | None = None) -> str:
+    parts = build_body_paragraphs(text, title, spec, footnotes)
     page = spec["page"]
     if page.get("size", "A4").upper() == "LETTER":
         width, height = 12240, 15840
@@ -221,7 +256,7 @@ def build_document_xml(text: str, title: str | None, spec: dict[str, Any]) -> st
 </w:document>"""
 
 
-def build_body_paragraphs(text: str, title: str | None, spec: dict[str, Any]) -> list[str]:
+def build_body_paragraphs(text: str, title: str | None, spec: dict[str, Any], footnotes: list[str] | None = None) -> list[str]:
     parts: list[str] = []
     if title:
         parts.append(paragraph_xml(title, "DocTitle", spec["title"], spec))
@@ -234,9 +269,9 @@ def build_body_paragraphs(text: str, title: str | None, spec: dict[str, Any]) ->
             fmt = spec["headings"].get(str(level), spec["headings"]["4"])
             parts.append(paragraph_xml(content, f"Heading{level}", fmt, spec))
         elif kind == "bullet":
-            parts.append(paragraph_xml(content, "ListParagraph", spec["body"], spec, bullet=True))
+            parts.append(paragraph_xml(content, "ListParagraph", spec["body"], spec, bullet=True, footnotes=footnotes))
         else:
-            parts.append(paragraph_xml(content, "BodyText", spec["body"], spec))
+            parts.append(paragraph_xml(content, "BodyText", spec["body"], spec, footnotes=footnotes))
     return parts
 
 
@@ -260,7 +295,8 @@ def header_footer_xml(text: str, spec: dict[str, Any], footer: bool = False) -> 
 
 def relationships_xml(spec: dict[str, Any]) -> str:
     rels = [
-        '<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+        '<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>',
+        '<Relationship Id="rIdFootnotes" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footnotes" Target="footnotes.xml"/>',
     ]
     if spec.get("header"):
         rels.append('<Relationship Id="rIdHeader" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>')
@@ -276,6 +312,7 @@ def content_types_xml(spec: dict[str, Any]) -> str:
     overrides = [
         '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>',
         '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>',
+        '<Override PartName="/word/footnotes.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>',
         '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>',
         '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>',
     ]
@@ -316,17 +353,45 @@ def app_xml() -> str:
 </Properties>"""
 
 
+def footnotes_xml(notes: list[str], spec: dict[str, Any]) -> str:
+    body_fmt = {**spec["body"], "font_size_pt": 9}
+    note_parts = [
+        '<w:footnote w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:footnote>',
+        '<w:footnote w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote>',
+    ]
+    for idx, note in enumerate(notes, start=1):
+        note_parts.append(f"""<w:footnote w:id="{idx}">
+  <w:p>
+    <w:pPr>
+      <w:pStyle w:val="FootnoteText"/>
+      <w:spacing w:before="0" w:after="0"/>
+    </w:pPr>
+    <w:r>
+      <w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr>
+      <w:footnoteRef/>
+    </w:r>
+    {run_xml(" " + note, body_fmt, spec)}
+  </w:p>
+</w:footnote>""")
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:footnotes xmlns:w="{NS['w']}" xmlns:r="{NS['r']}">
+  {''.join(note_parts)}
+</w:footnotes>"""
+
+
 def create_docx(input_path: Path, output_path: Path, spec: dict[str, Any], title: str | None) -> None:
     text = input_path.read_text(encoding="utf-8")
+    footnotes: list[str] = []
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output_path, "w", compression=zipfile.ZIP_DEFLATED) as docx:
         docx.writestr("[Content_Types].xml", content_types_xml(spec))
         docx.writestr("_rels/.rels", root_rels_xml())
         docx.writestr("docProps/core.xml", core_xml(title))
         docx.writestr("docProps/app.xml", app_xml())
-        docx.writestr("word/document.xml", build_document_xml(text, title, spec))
+        docx.writestr("word/document.xml", build_document_xml(text, title, spec, footnotes))
         docx.writestr("word/_rels/document.xml.rels", relationships_xml(spec))
         docx.writestr("word/styles.xml", styles_xml(spec))
+        docx.writestr("word/footnotes.xml", footnotes_xml(footnotes, spec))
         if spec.get("header"):
             docx.writestr("word/header1.xml", header_footer_xml(str(spec["header"]), spec))
         if spec.get("footer"):

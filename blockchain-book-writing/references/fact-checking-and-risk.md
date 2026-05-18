@@ -40,7 +40,10 @@ Use expressions such as:
 
 - "该项目由……提出"
 - "该协议采用……"
-- "公开资料显示……"
+- "该系统由……组成"
+- "该项目将……作为核心设计"
+
+In book prose, do not routinely begin sentences with source-preface expressions such as "据公开资料显示", "据官方说明", "根据官方说明", "从现有资料看", or "从公开资料看". These expressions are acceptable only when the information is early, uncertain, disputed, or source-limited.
 
 Judgments are analysis based on facts and technical logic.
 
@@ -64,12 +67,11 @@ Never write speculation as fact.
 
 Use cautious expressions for uncertain or emerging topics:
 
-- "从公开资料看……"
 - "其设计目标是……"
-- "根据项目披露的信息……"
 - "如果该路线能够落地……"
 - "这一方向仍处于早期阶段……"
 - "目前更适合作为趋势观察，而非成熟范式……"
+- "相关能力仍需在生产环境中验证……"
 
 Avoid these claims unless strongly supported:
 
@@ -82,6 +84,31 @@ Avoid these claims unless strongly supported:
 
 ## Citation Handling
 
-If the user asks for citations, references, or fact checking, provide sources. If the user asks for smooth book prose, keep the body readable and add reference suggestions at the end. If the user asks for a research-report style, include inline citations where useful. If the user asks for formal publication material, use footnotes, endnotes, or bibliography formatting as requested.
+By default, provide footnote-style citations for source-backed writing that depends on GitHub repositories, official documentation, papers, regulatory documents, standards, or authoritative data sources. Do this even if the user does not explicitly ask for citations. Omit citations only when the user explicitly requests citation-free prose.
+
+Keep the main prose readable and book-like. Mark the supported sentence or clause with a footnote number, and place the source note at the bottom of the page. Do not repeatedly start sentences with source-preface expressions.
+
+Use citation notes for:
+
+- Official documentation: protocol versions, architecture, module behavior, APIs, governance process, roadmap, or product status.
+- GitHub repositories: source-code implementation, license, release status, module ownership, branch/tag/release, or actual code behavior.
+- Papers: algorithms, cryptographic assumptions, formal proofs, consensus properties, complexity, security model, or benchmark methods.
+- Authoritative data: transaction volume, asset size, TPS, latency, finality, market data, regulatory dates, adoption data, or ecosystem statistics.
+- Regulatory and standards documents: compliance requirements, legal definitions, supervisory rules, technical standards, and implementation guidelines.
+
+Preferred footnote content:
+
+```text
+参见 Hyperledger Fabric v2.x 官方文档中关于背书策略、通道和私有数据的说明，URL。
+参见项目 GitHub 仓库 owner/repo 的 release notes 或对应模块源码，建议标明 tag/commit。
+参见原论文对共识安全模型、复杂度和故障假设的论证，作者、题名、会议/期刊或 arXiv、年份。
+参见监管机构发布的正式文本或标准文件，建议标明发布日期和条款位置。
+```
+
+For smooth chapters, do not cite every general claim. Cite where the source materially supports a specific fact, number, protocol behavior, or policy statement.
+
+If working in plain text before Word conversion, use `（批注：source note）` immediately after the supported sentence. The Word formatting step should convert these markers into true footnotes so the final `.docx` body contains only footnote numbers and the source notes appear at the bottom of the page.
+
+If exact URLs are needed, place them in footnotes or a reference list. Avoid inserting long URLs in body prose unless requested.
 
 For uncertain facts, add a short "待核查事实" or "表述风险" section when appropriate.

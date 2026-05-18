@@ -139,6 +139,8 @@ cp -R text-to-word-formatting ~/.codex/skills/
 
 默认排版规则已根据上级目录中的 `区块链技术-作者著书须知.doc` 总结并写入 skill，详见 `text-to-word-formatting/references/publisher-default-format.md`。
 
+当前默认格式包括：正文宋体五号，正文英文和数字 Times New Roman；二级标题楷体_GB2312 四号；三级标题黑体小四加粗。
+
 ### 适用场景
 
 - 将纯文本或类 Markdown 文稿转换为 Word `.docx`

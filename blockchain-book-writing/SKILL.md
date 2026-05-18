@@ -48,9 +48,11 @@ Do not use this skill for short one-sentence explanations, social-media articles
    Each section should first explain the problem, then the mechanism, then the meaning. Do not merely list terms. Distinguish vision, design goals, implemented capabilities, and future possibilities.
    For third-level numbered book sections such as `9.5.1`, `9.5.2`, or `2.3.4`, do not create extra internal numbered headings by default. Output the section heading followed by at most three body paragraphs, unless the user explicitly asks for a deeper outline. The three-paragraph rule is a structure rule, not a length limit.
    When the user specifies a target length, satisfy that length as closely as possible within the requested structure. For example, a 2500-word third-level section should still use at most three substantial paragraphs rather than adding internal headings.
+   When polishing, unifying, or fact-checking an existing draft, preserve the author's original structure, paragraph order, examples, emphasis, and readable voice by default. Apply the minimum necessary edits for accuracy, consistency, citations, and obvious language problems. Do not rewrite the draft into a generic AI-style template, do not force every section into the default structure, and do not change the output format unless the user asks for restructuring or expansion.
 
-7. Check facts and uncertainty.
+7. Check facts, uncertainty, and citations.
    If the chapter involves post-2024 projects, current project status, launch dates, partners, financing, transaction volumes, TPS, latency, finality, protocol versions, roadmap, regulatory progress, ecosystem data, latest cases, or current leaders, verify facts before stating them as current. Prefer official docs, official blogs, white papers, technical docs, GitHub repositories, regulatory or standards documents, authoritative media, and research reports.
+   By default, when using GitHub repositories, official documentation, papers, regulatory documents, standards, or authoritative data sources for specific facts, use footnote-style citations. In the final Word manuscript, the body should contain only footnote numbers at the corresponding facts, and source notes should appear at the bottom of the page. Omit citations only when the user explicitly asks for citation-free prose.
 
 8. Apply terminology and style controls.
    Keep terms consistent. Avoid hype, marketing claims, unsupported certainty, and mixing distinct concepts such as stablecoins, tokenized deposits, RWA, CBDC, digital assets, privacy, anonymity, auditability, and public transparency.
@@ -99,6 +101,7 @@ If key information is missing, write a usable version from available context and
 Load only the references needed for the current task:
 
 - `references/chapter-types.md`: chapter-type templates and structure patterns.
+- `references/book-style-guide.md`: multi-author book prose style, tone, terminology discipline, and chapter unification rules.
 - `references/terminology-and-domain-rules.md`: terminology distinctions and domain-specific focus areas.
 - `references/fact-checking-and-risk.md`: fact-checking rules, uncertainty language, forbidden claims, and source priorities.
 - `references/style-and-quality.md`: writing style, recommended expressions, length rules, and final checklist.

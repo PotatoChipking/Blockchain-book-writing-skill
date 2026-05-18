@@ -6,7 +6,7 @@ These rules were summarized from `区块链技术-作者著书须知.doc`. Apply
 
 - Body Chinese font: 宋体 / SimSun.
 - Body English and numbers: Times New Roman.
-- Body font size: 小四 / 12 pt.
+- Body font size: 五号 / 10.5 pt.
 - Body paragraph: first-line indent of 2 Chinese characters.
 - Body alignment: justify both sides.
 - Body text: avoid unnecessary spaces between Chinese characters.
@@ -34,6 +34,8 @@ These rules were summarized from `区块链技术-作者著书须知.doc`. Apply
 - Heading text should be concise, usually no more than 15 Chinese characters.
 - Headings should not end with punctuation, including question marks or exclamation marks.
 - English letters and numbers in headings should use the same font as the Chinese heading text.
+- Second-level headings: 楷体_GB2312, 四号 / 14 pt, left aligned.
+- Third-level headings: 黑体 / SimHei, 小四 / 12 pt, bold, left aligned.
 
 ## Figures and Tables
 

@@ -1,5 +1,7 @@
 # Style and Quality
 
+For multi-author chapter writing, rewriting, polishing, or final unification, also apply `book-style-guide.md`. This file gives the short quality checklist; `book-style-guide.md` gives the fuller book-level prose and consistency rules.
+
 ## Writing Style
 
 Use formal technical book style:
@@ -11,10 +13,11 @@ Use formal technical book style:
 - Do not present business vision as technical fact.
 - Do not present a single project as an unconditional success case.
 - Keep uncertainty analysis for emerging projects.
+- When polishing or unifying an existing draft, preserve the author's original structure, examples, paragraph order, and readable voice by default. Use style rules as light editing constraints, not as a mandate to rewrite the draft into a uniform template.
 
 ## Recommended Expressions
 
-Prefer expressions such as:
+When writing new text from scratch, expressions such as the following can be useful:
 
 - "从技术演进角度看……"
 - "这一设计反映出……"
@@ -25,6 +28,8 @@ Prefer expressions such as:
 - "这类设计的价值，需要放在……背景下理解。"
 - "该方向仍处于发展阶段，其长期影响取决于……"
 - "对于金融基础设施而言，性能并不是唯一指标，合规、隐私、审计和互操作性同样重要。"
+
+Do not insert these expressions mechanically into an existing draft. Avoid making different authors' chapters sound identical.
 
 Avoid expressions such as:
 
@@ -55,6 +60,8 @@ For expansion, add background, mechanisms, engineering details, comparisons, use
 ## Common Problems to Avoid
 
 - Writing product promotion, social-media marketing, encyclopedia entries, or loose bullet lists.
+- Over-editing an existing draft until the original structure, emphasis, and human voice are lost.
+- Turning a readable manuscript into a generic AI-style balanced template.
 - Explaining only "what" without "why" and "how".
 - Listing terms without relationships.
 - Turning business vision into technical reality.
