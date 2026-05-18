@@ -30,3 +30,14 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Manuscript outputs and generated chapter artifacts
+9.5*.txt
+9.5*.docx
+chapter-9*.txt
+chapter-9*.docx
+chapter-9*.json
+chapter-9-5-1*.txt
+chapter-9-5-1*.docx
+.~*.docx
+text-to-word-formatting/scripts/__pycache__/
